@@ -1,0 +1,103 @@
+---
+title: "Prevendo Despesas Hospitalares"
+author: "Hudson Santos"
+date: "2024-04-28"
+output:
+  word_document: default
+  html_document: default
+---
+
+## Etapa 1 - Coletando os Dados
+
+```{r, }
+# Coletando dados
+despesas <- read.csv("despesas.csv")
+head(despesas)
+```
+
+## Etapa 2 - Explorando os dados
+
+```{r, }
+#Visualização das variaveis
+str(despesas)
+```
+
+```{r, }
+# Medidas de Tendência Central da variavel gastos 
+summary(despesas$gastos)
+```
+
+```{r, }
+# Construindo um histograma
+hist(despesas$gastos, main = 'Histograma', xlab = 'Gastos')
+```
+
+```{r, }
+# Tabela de contingência das regiões 
+table(despesas$regiao)
+```
+
+```{r, }
+# Explorando relacionamento entre as variáveis: Matriz de Correlação 
+cor(despesas[c("idade", "bmi", "filhos", "gastos")])
+```
+
+Observou-se correlações modestas na matriz, sem evidência de fortes associações. Notavelmente, a idade e o IMC (índice de massa corporal) exibem uma correlação positiva fraca, indicando um aumento geral do peso corporal com o avanço da idade. Além disso, foi identificada uma correlação moderada entre a idade e os gastos, assim como entre o número de filhos e os gastos. Essas associações sugerem que, conforme a idade, o IMC e o número de filhos aumentam, espera-se um aumento nos custos do seguro saúde.
+
+```{r, }
+#Visualizando relacionamento entre as variáveis: Scatterplot
+# observação: não existe um claro relacionamento entre as variáveis 
+pairs(despesas[c("idade", "bmi", "filhos", "gastos")])
+```
+
+```{r, }
+#install.packages("psych") 
+library(psych)
+
+#Este gráfico fornece mais informações sobre o relacionamento entre as variáveis 
+pairs.panels(despesas[c("idade", "bmi", "filhos", "gastos")])
+```
+
+## Etapa 3 - Treinando o Modelo
+
+```{r, }
+modelo<- lm(gastos ~ idade + filhos + bmi + sexo + fumante + regiao, data= despesas)
+
+# Similar ao item anterior
+modelo<- lm(gastos ~ ., data= despesas) 
+
+# Visualizando os coeficientes
+modelo
+```
+
+```{r, }
+# Prevendo despesas médicas 
+previsao <- predict(modelo) 
+class(previsao)
+```
+
+```{r, }
+# Visualizando cabeçalho
+head(previsao)
+```
+
+## Etapa 4- Avaliando a Performance do Modelo
+
+```{r, }
+# Mais detalhes sobre o modelo 
+summary(modelo)
+```
+
+## Etapa 5 - Otimização do Modelo
+
+```{r, }
+#Adicionando uma variável com o dobro do valor das idades 
+despesas$idade2 <- despesas$idade ^ 2
+
+# Adicionando um indicador para BMI >= 30 
+despesas$bmi30 <- ifelse(despesas$bmi >= 30, 1, 0)
+
+# Criando o modelo final
+modelo_v2 <- lm(gastos ~ idade + idade2 + filhos + bmi + sexo + bmi30 * fumante +    regiao, data= despesas)
+summary(modelo_v2)
+```
